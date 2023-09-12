@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Executor</title>
+</head>
+<body>
+
+<textarea id="codeInput" rows="10" cols="50"></textarea>
+<button onclick="executeCode()">Run</button>
+<pre id="output"></pre>
+
+<script>
+function executeCode() {
+    let code = document.getElementById("codeInput").value;
+    fetch('/execute-code', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({code: code})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.output) {
+            document.getElementById("output").innerText = data.output;
+        } else {
+            document.getElementById("output").innerText = "Error: " + data.error;
+        }
+    });
+}
+</script>
+
+</body>
+</html>
