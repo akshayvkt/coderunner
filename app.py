@@ -1,4 +1,7 @@
+from IPython import get_ipython
 from flask import Flask, request, jsonify, render_template
+from IPython.core.interactiveshell import InteractiveShell
+
 
 app = Flask(__name__)
 
@@ -9,33 +12,22 @@ def index():
 @app.route('/execute-code', methods=['POST'])
 def execute_code():
     code = request.json.get('code', '')
-
-    output_dict = {"output": ""}
-
-    def capture_print(*args, **kwargs):
-        output_dict["output"] += " ".join(map(str, args)) + "\n"
-
+    
+    # Initialize IPython shell instance
+    ipython = InteractiveShell()
+    
     try:
-        # Temporarily override the built-in print function
-        original_print = __builtins__.print
-        __builtins__.print = capture_print
-
-        # First, try to evaluate the code as an expression
-        try:
-            result = eval(code)
-            if result is not None:  # Only capture if there's a result
-                output_dict["output"] += str(result) + "\n"
-        except SyntaxError:
-            # If it's not an expression, execute it as a statement
-            exec(code)
-
-        return jsonify(output_dict)
+        # Execute the code using IPython's run_cell
+        result = ipython.run_cell(code)
+        
+        # Check if there's an error in the result object
+        if result.error_in_exec:
+            return jsonify({"error": str(result.error_in_exec)})
+        
+        # Return the result or an empty string if result.result is None
+        return jsonify({"output": str(result.result) if result.result else ""})
     except Exception as e:
         return jsonify({"error": str(e)})
-    finally:
-        # Restore the original print function
-        __builtins__.print = original_print
-
 
 if __name__ == '__main__':
     app.run(debug=True)
